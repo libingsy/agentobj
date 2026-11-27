@@ -1,0 +1,116 @@
+# configs/full.yaml
+# Full pipeline: MV-Adapter (SDXL) + LGM generation, YOLOv10x as the monocular
+# detector, and MambaFusion as the camera-LiDAR detector. The object is inserted
+# into one nuScenes keyframe and scored there by MambaFusion.
+# Run with:  python scripts/run_full_attack.py --config configs/full.yaml --use_real_models
+experiment:
+  name: agent_obj_directed
+  seed: 42
+  device: cuda
+  output_dir: ./outputs
+
+optimization:
+  max_iterations: 16
+  viewpoints: [0, 90, 180, 270]
+  num_viewpoints: 4
+  query_budget: 400
+  accept_threshold: 0.0
+
+render:
+  resolution: 256
+  fovy_deg: 40.0
+  cam_distance: 6.0
+  lidar_distance: 8.0
+  num_beams: 32
+
+loss:
+  lambda_2d: 1.0
+  # With lambda_fusion > 0 and a sample token, every iteration inserts the
+  # object into the nuScenes keyframe and queries MambaFusion there.
+  lambda_fusion: 1.0
+  alpha_nat: 0.1
+  beta_mv: 0.1
+  conf_threshold: 0.5
+
+# SDXL, 30 steps. Sequential load keeps one UNet on the GPU at a time (fits a 48 GB card).
+# base_model / vae_model: null downloads the official SDXL weights from Hugging Face.
+generator:
+  variant: sdxl
+  azimuth_deg: [0, 45, 90, 180, 270, 315]
+  height: null
+  width: null
+  steps_t2mv: 30
+  steps_i2mv: 30
+  guidance_t2mv: 7.0
+  guidance_i2mv: 3.0
+  base_model: null
+  vae_model: null
+  scheduler: null
+  lora_model: null
+  negative_prompt: "watermark, ugly, deformed, noisy, blurry, low contrast"
+  target_height: 1.7
+  sequential_load: true
+  fallback_to_dummy: false
+
+prompts:
+  base: "a realistic pedestrian standing on the road"
+  semantic_init: "carrying a backpack"
+  style_init: "wearing a dark jacket and jeans"
+
+edit_pools:
+  semantic:
+    - "carrying a large backpack"
+    - "holding a shopping bag"
+    - "wearing a wide-brimmed hat"
+    - "with a long coat"
+    - "carrying a suitcase"
+    - "wearing a reflective vest"
+    - "holding an umbrella"
+    - "with a hood up"
+    - "carrying a box"
+    - "wearing a scarf"
+  style:
+    - "dark clothing"
+    - "camouflage pattern"
+    - "high contrast colors"
+    - "blurry texture"
+    - "low saturation"
+    - "urban street style"
+    - "matte fabric"
+    - "shadowy appearance"
+    - "weathered clothing"
+    - "black hoodie"
+
+detectors:
+  yolo_model: "pretrained/yolov10x.pt"
+  person_class: 0
+  fusion_model: null
+
+evaluation:
+  asr_require_both: true
+  # Insertion runs in the MambaFusion worker, so this process does not import nuscenes.
+  insert_in_loop: false
+  sample_token: e93e98b63d3b40209056d129dc53ceee
+  camera: CAM_FRONT
+  nusc_version: v1.0-trainval
+  object_translation: [8.0, 0.0, 0.0]
+
+paths:
+  nuscenes_root: "data/nuscenes"
+  feature_bank: "data/pedestrian_feature_bank.pt"
+  # Standard PointNet classification checkpoint (yanx27 format) for L_nat, used
+  # when building the feature bank. Empty = randomly initialised encoder (smoke
+  # test only, not a trained naturalness measure).
+  pointnet_ckpt: "pretrained/pointnet/pointnet_cls.pth"
+  lgm_weights: "pretrained/LGM/model_fp16_fixrot.safetensors"
+  lgm_repo: "third_party/LGM"
+  mv_adapter_weights: "huanngzh/mv-adapter"
+  mvadapter_repo: "third_party/MV-Adapter"
+  # Leave the in-process repo/cfg/ckpt empty: MambaFusion needs Python 3.8 /
+  # torch 2.1 and runs in its own environment through the worker below.
+  mambafusion_repo: ""
+  mambafusion_cfg: ""
+  mambafusion_ckpt: ""
+  # Python of the MambaFusion environment, e.g. ~/miniconda3/envs/mambafusion/bin/python
+  mambafusion_python: "/path/to/envs/mambafusion/bin/python"
+  mambafusion_worker: "scripts/mambafusion_worker.py"

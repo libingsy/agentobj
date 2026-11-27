@@ -1,0 +1,161 @@
+# configs/default.yaml
+# Default settings. Without --use_real_models the generator and detectors are
+# lightweight stand-ins, so this config runs on a laptop CPU.
+experiment:
+  name: agent_obj_nuscenes
+  seed: 42
+  device: auto
+  output_dir: ./outputs
+
+# Optimization (Algorithm 1)
+optimization:
+  max_iterations: 50
+  viewpoints: [0, 90, 180, 270]
+  num_viewpoints: 4
+  query_budget: 400
+  accept_threshold: 0.0
+
+# Orbit camera and LiDAR used to score each candidate
+render:
+  resolution: 256
+  fovy_deg: 40.0
+  cam_distance: 6.0
+  lidar_distance: 8.0
+  num_beams: 32
+
+# Loss weights
+loss:
+  lambda_2d: 1.0
+  lambda_fusion: 1.0
+  alpha_nat: 0.1
+  beta_mv: 0.1
+  conf_threshold: 0.5
+
+# MV-Adapter (geometry T2MV, then style I2MV) followed by LGM.
+# variant: sdxl uses the official 768px weights; sd21 is the lighter 512px pair.
+# azimuth_deg is the set the adapter was trained with. LGM then keeps 0/90/180/270.
+generator:
+  variant: sdxl
+  azimuth_deg: [0, 45, 90, 180, 270, 315]
+  height: null
+  width: null
+  steps_t2mv: 50
+  steps_i2mv: 50
+  guidance_t2mv: 7.0
+  guidance_i2mv: 3.0
+  base_model: null
+  vae_model: null
+  scheduler: null
+  lora_model: null
+  negative_prompt: "watermark, ugly, deformed, noisy, blurry, low contrast"
+  target_height: 1.7
+  sequential_load: true
+  fallback_to_dummy: false
+
+# Prompts
+prompts:
+  base: "a realistic pedestrian standing on the road"
+  semantic_init: "carrying a backpack"
+  style_init: "wearing a dark jacket and jeans"
+
+# Edit pools. The paper searches about 30 phrases on each side.
+edit_pools:
+  semantic:
+    - "carrying a large backpack"
+    - "holding a shopping bag"
+    - "wearing a wide-brimmed hat"
+    - "with a long coat"
+    - "carrying a suitcase"
+    - "wearing a reflective vest"
+    - "holding an umbrella"
+    - "with a hood up"
+    - "carrying a box"
+    - "wearing a scarf"
+    - "wearing a helmet"
+    - "holding a briefcase"
+    - "carrying a shoulder bag"
+    - "with a messenger bag"
+    - "wearing boots"
+    - "wearing gloves"
+    - "wearing glasses"
+    - "wearing a cap"
+    - "with a ponytail"
+    - "with a knee-length coat"
+    - "with arms crossed"
+    - "mid-stride walking pose"
+    - "standing with one hand raised"
+    - "with a backpack on both shoulders"
+    - "holding a folded jacket"
+    - "holding a phone to the ear"
+    - "pushing a bicycle"
+    - "tall and slim build"
+    - "short and broad build"
+    - "carrying a duffel bag"
+  style:
+    - "dark clothing"
+    - "camouflage pattern"
+    - "high contrast colors"
+    - "blurry texture"
+    - "low saturation"
+    - "urban street style"
+    - "matte fabric"
+    - "high-vis colors"
+    - "shadowy appearance"
+    - "weathered clothing"
+    - "monochrome outfit"
+    - "neon accents"
+    - "denim texture"
+    - "wool coat texture"
+    - "glossy raincoat"
+    - "faded colors"
+    - "muddy clothes"
+    - "sunlit highlights"
+    - "overcast flat lighting"
+    - "night-time low light"
+    - "motion blur"
+    - "film grain"
+    - "pastel colors"
+    - "black hoodie"
+    - "white shirt and dark pants"
+    - "plaid shirt"
+    - "leather jacket"
+    - "cotton summer clothes"
+    - "dusty surface"
+    - "soft studio lighting"
+
+# Detectors
+detectors:
+  yolo_model: "yolov10x.pt"
+  person_class: 0
+  fusion_model: null
+
+# Real nuScenes insertion is off until a sample token and dataroot are set.
+evaluation:
+  insert_in_loop: false
+  sample_token: null
+  camera: CAM_FRONT
+  nusc_version: v1.0-trainval
+  object_translation: [8.0, 0.0, 0.0]
+
+# Paths are relative to the repository root. mv_adapter_weights may be a
+# Hugging Face repo id or a local directory.
+# mambafusion_repo/cfg/ckpt load MambaFusion in this process (needs a single
+# environment that builds both stacks). mambafusion_python/worker instead run it
+# in its own environment through scripts/mambafusion_worker.py (recommended,
+# see configs/full.yaml).
+paths:
+  nuscenes_root: "data/nuscenes"
+  feature_bank: "data/pedestrian_feature_bank.pt"
+  # Standard PointNet classification checkpoint (yanx27 format) for L_nat, used
+  # when building the feature bank. Empty = randomly initialised encoder, which
+  # is a smoke-test placeholder only, not a trained naturalness measure.
+  pointnet_ckpt: ""
+  lgm_weights: "pretrained/LGM/model_fp16_fixrot.safetensors"
+  lgm_repo: "third_party/LGM"
+  mv_adapter_weights: "huanngzh/mv-adapter"
+  mvadapter_repo: "third_party/MV-Adapter"
+  mambafusion_repo: ""
+  mambafusion_cfg: ""
+  mambafusion_ckpt: ""
+  mambafusion_python: ""
+  mambafusion_worker: ""
