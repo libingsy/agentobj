@@ -1,0 +1,40 @@
+# Agent-OBJ environment (tested: Python 3.10, torch 2.5.1 + CUDA 12.4).
+# Install torch first, matching your CUDA version:
+#   pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
+# MambaFusion runs in a separate environment, see tools/setup_mambafusion.sh.
+
+# Core
+numpy
+scipy
+pyyaml
+tqdm
+pillow
+pytest
+requests
+opencv-python-headless
+
+# EditAgent (Qwen2.5) and MV-Adapter
+transformers==4.46.3
+accelerate==1.2.1
+diffusers==0.32.2
+peft==0.14.0
+huggingface_hub==0.27.1
+safetensors
+sentencepiece
+omegaconf
+einops
+
+# LGM
+kiui
+tyro
+roma
+plyfile
+lpips
+trimesh
+imageio
+
+# Monocular detector (YOLOv10x)
+ultralytics==8.4.218
+
+# Optional: in-loop nuScenes insertion in this environment
+# nuscenes-devkit pyquaternion
