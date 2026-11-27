@@ -1,0 +1,9 @@
+[submodule "third_party/LGM"]
+	path = third_party/LGM
+	url = https://github.com/3DTopia/LGM.git
+[submodule "third_party/MV-Adapter"]
+	path = third_party/MV-Adapter
+	url = https://github.com/huanngzh/MV-Adapter.git
+[submodule "third_party/MambaFusion"]
+	path = third_party/MambaFusion
+	url = https://github.com/AutoLab-SAI-SJTU/MambaFusion.git

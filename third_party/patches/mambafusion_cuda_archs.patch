@@ -1,0 +1,78 @@
+diff --git a/mamba_diffv/mamba/setup.py b/mamba_diffv/mamba/setup.py
+index dd8d812..c54f161 100755
+--- a/mamba_diffv/mamba/setup.py
++++ b/mamba_diffv/mamba/setup.py
+@@ -173,22 +173,30 @@ if not SKIP_CUDA_BUILD:
+                     "Note: make sure nvcc has a supported version by running nvcc -V."
+                 )
+ 
+-        cc_flag.append("-gencode")
+-        cc_flag.append("arch=compute_53,code=sm_53")
+-        cc_flag.append("-gencode")
+-        cc_flag.append("arch=compute_62,code=sm_62")
+-        cc_flag.append("-gencode")
+-        cc_flag.append("arch=compute_70,code=sm_70")
+-        cc_flag.append("-gencode")
+-        cc_flag.append("arch=compute_72,code=sm_72")
+-        cc_flag.append("-gencode")
+-        cc_flag.append("arch=compute_80,code=sm_80")
+-        cc_flag.append("-gencode")
+-        cc_flag.append("arch=compute_87,code=sm_87")
+-
+-        if bare_metal_version >= Version("11.8"):
++        extra_archs = os.environ.get("AGENTOBJ_CUDA_ARCHS", "")
++        if extra_archs:
++            for arch in extra_archs.split(","):
++                arch = arch.strip()
++                if arch:
++                    cc_flag.append("-gencode")
++                    cc_flag.append(f"arch=compute_{arch},code=sm_{arch}")
++        else:
+             cc_flag.append("-gencode")
+-            cc_flag.append("arch=compute_90,code=sm_90")
++            cc_flag.append("arch=compute_53,code=sm_53")
++            cc_flag.append("-gencode")
++            cc_flag.append("arch=compute_62,code=sm_62")
++            cc_flag.append("-gencode")
++            cc_flag.append("arch=compute_70,code=sm_70")
++            cc_flag.append("-gencode")
++            cc_flag.append("arch=compute_72,code=sm_72")
++            cc_flag.append("-gencode")
++            cc_flag.append("arch=compute_80,code=sm_80")
++            cc_flag.append("-gencode")
++            cc_flag.append("arch=compute_87,code=sm_87")
++
++            if bare_metal_version >= Version("11.8"):
++                cc_flag.append("-gencode")
++                cc_flag.append("arch=compute_90,code=sm_90")
+ 
+ 
+     # HACK: The compiler flag -D_GLIBCXX_USE_CXX11_ABI is set to be the same as
+diff --git a/selective_scan/setup.py b/selective_scan/setup.py
+index b825b78..46340b1 100644
+--- a/selective_scan/setup.py
++++ b/selective_scan/setup.py
+@@ -59,10 +59,19 @@ def get_ext():
+         if bare_metal_version < Version("11.2"):
+             multi_threads = False
+             
+-    cc_flag.extend(["-gencode", "arch=compute_70,code=sm_70"])
+-    cc_flag.extend(["-gencode", "arch=compute_80,code=sm_80"])
+-    if gencode_sm90:
+-        cc_flag.extend(["-gencode", "arch=compute_90,code=sm_90"])
++    # L40 is sm_89 and A6000 is sm_86. The upstream list has no PTX and no
++    # Ada/Ampere-86 cubin, so those GPUs cannot launch the kernels.
++    extra_archs = os.environ.get("AGENTOBJ_CUDA_ARCHS", "")
++    if extra_archs:
++        for arch in extra_archs.split(","):
++            arch = arch.strip()
++            if arch:
++                cc_flag.extend(["-gencode", f"arch=compute_{arch},code=sm_{arch}"])
++    else:
++        cc_flag.extend(["-gencode", "arch=compute_70,code=sm_70"])
++        cc_flag.extend(["-gencode", "arch=compute_80,code=sm_80"])
++        if gencode_sm90:
++            cc_flag.extend(["-gencode", "arch=compute_90,code=sm_90"])
+     if multi_threads:
+         cc_flag.extend(["--threads", "4"])
+ 
