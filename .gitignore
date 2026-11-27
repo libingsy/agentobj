@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Weights, datasets and run outputs
+pretrained/
+data/nuscenes
+data/*.pt
+outputs/
+logs/
+*.pth
+*.safetensors
+*.ckpt
+yolov10*.pt
+
+# Local, machine-specific files (not part of the release)
+*.pdf
+env.sh
+configs/cluster.yaml
+scripts/*.sbatch
+.vscode/
+.idea/
